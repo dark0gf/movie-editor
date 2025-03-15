@@ -176,4 +176,6 @@ cython_debug/
 .idea
 
 #project related files
+video
+result
 config.json
