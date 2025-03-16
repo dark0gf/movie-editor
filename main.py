@@ -9,6 +9,7 @@ import os
 with open("config.json") as json_file:
     config = json.load(json_file)
 
+print("config")
 print(config)
 
 # Create a temporary file for the audio
@@ -19,6 +20,8 @@ temp_audio_file.close()
 command = [
     'ffmpeg',
     '-i', f'./video/{config["videoSource"]}',
+    '-ss', config["startTime"],  # Start time
+    '-to', config["endTime"],    # End time
     '-map', '0:a:1',  # Select the second audio stream
     '-acodec', 'pcm_s16le',  # Use PCM format for better compatibility
     '-y',  # Overwrite output file if it exists
@@ -28,21 +31,6 @@ command = [
 # Run the command
 process = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-# Check if the extraction was successful
-if process.returncode != 0:
-    print("Error extracting audio. Trying with default audio stream...")
-    # Try again with the default audio stream
-    command = [
-        'ffmpeg',
-        '-i', f'./video/{config["videoSource"]}',
-        '-acodec', 'pcm_s16le',
-        '-y',
-        temp_audio_file.name
-    ]
-    process = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if process.returncode != 0:
-        print("Error extracting audio:", process.stderr.decode())
-        exit(1)
 
 # Create an AudioFileClip from the temporary file
 audio_clip = AudioFileClip(temp_audio_file.name)
