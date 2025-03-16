@@ -1,46 +1,88 @@
+import subprocess
 from moviepy import *
 import numpy as np
 import json
+import io
+import tempfile
+import os
 
 with open("config.json") as json_file:
     config = json.load(json_file)
 
 print(config)
 
-videoFileClip = VideoFileClip(config.videoSource)
+# Create a temporary file for the audio
+temp_audio_file = tempfile.NamedTemporaryFile(suffix='.wav', delete=False)
+temp_audio_file.close()
+
+# Extract audio directly to the temporary file using ffmpeg
+command = [
+    'ffmpeg',
+    '-i', f'./video/{config["videoSource"]}',
+    '-map', '0:a:1',  # Select the second audio stream
+    '-acodec', 'pcm_s16le',  # Use PCM format for better compatibility
+    '-y',  # Overwrite output file if it exists
+    temp_audio_file.name
+]
+
+# Run the command
+process = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+# Check if the extraction was successful
+if process.returncode != 0:
+    print("Error extracting audio. Trying with default audio stream...")
+    # Try again with the default audio stream
+    command = [
+        'ffmpeg',
+        '-i', f'./video/{config["videoSource"]}',
+        '-acodec', 'pcm_s16le',
+        '-y',
+        temp_audio_file.name
+    ]
+    process = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if process.returncode != 0:
+        print("Error extracting audio:", process.stderr.decode())
+        exit(1)
+
+# Create an AudioFileClip from the temporary file
+audio_clip = AudioFileClip(temp_audio_file.name)
+
+videoFileClip = VideoFileClip(f'./video/{config["videoSource"]}')
 
 clip1 = videoFileClip.subclipped(
-    "00:03:34.75", "00:03:56.80"
+    "00:10:34.75", "00:10:56.80"
 )
-
-
-
-
-
-
 
 final_clip = CompositeVideoClip(
     [
         clip1,
     ]
 )
-final_clip.write_videofile("./video/result.mp4")
-
-from moviepy.editor import AudioFileClip
-import subprocess
-
-# Get audio stream using ffmpeg (without saving it to a temp file)
-command = 'ffmpeg -i ./video/Scott.Pilgrim.vs.the.World.2010.BDRip.1080p.Rus.Eng.mkv -map 0:a:1 -f nut -'
-process = subprocess.run(command, capture_output=True, text=True, shell=True)
-
-# Convert audio stream to bytes
-audio_stream = process.stdout.encode('utf-8')
-
-# Create an audio clip from the bytes
-audio_clip = AudioFileClip(audio_stream)
 
 # Set the audio of the video clip to the new audio clip
-final_clip = final_clip.set_audio(audio_clip)
+final_clip = final_clip.with_audio(audio_clip)  # Changed from set_audio to with_audio
+final_clip.write_videofile("./result/result.mp4")
 
-# Write the final video file
-final_clip.write_videofile("./video/result.mp4")
+# Clean up resources
+try:
+    audio_clip.close()
+except:
+    pass
+
+try:
+    videoFileClip.close()
+except:
+    pass
+
+try:
+    final_clip.close()
+except:
+    pass
+
+# Remove the temporary audio file
+try:
+    os.unlink(temp_audio_file.name)
+except:
+    pass
+
+print("Video processing completed successfully!")
