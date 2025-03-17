@@ -12,33 +12,39 @@ with open("config.json") as json_file:
 print("config")
 print(config)
 
-# Create a temporary file for the audio
-temp_audio_file = tempfile.NamedTemporaryFile(suffix='.wav', delete=False)
-temp_audio_file.close()
-
-# Extract audio directly to the temporary file using ffmpeg
+# Audio
+temp_audio_file = './result/audio.wav'
 command = [
     'ffmpeg',
     '-i', f'./video/{config["videoSource"]}',
-    '-ss', config["startTime"],  # Start time
-    '-to', config["endTime"],    # End time
-    '-map', '0:a:1',  # Select the second audio stream
-    '-acodec', 'pcm_s16le',  # Use PCM format for better compatibility
-    '-y',  # Overwrite output file if it exists
-    temp_audio_file.name
+    '-ss', config["startTime"],
+    '-to', config["endTime"],
+    '-map', f'0:a:{config["audioTrack"]}',
+    '-acodec', 'pcm_s16le',
+    '-y',
+    temp_audio_file
 ]
-
-# Run the command
 process = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+print(process.stderr.decode())
+audio_clip = AudioFileClip(temp_audio_file)
 
+# Subtitles
+temp_subtitle_file = './result/subtitles.srt'
+subtitle_command = [
+    'ffmpeg',
+    '-i', f'./video/{config["videoSource"]}',
+    '-map', '0:s:0',
+    '-c', 'copy',
+    '-y',
+    temp_subtitle_file
+]
+subprocess.run(subtitle_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-# Create an AudioFileClip from the temporary file
-audio_clip = AudioFileClip(temp_audio_file.name)
-
+# Video
 videoFileClip = VideoFileClip(f'./video/{config["videoSource"]}')
 
 clip1 = videoFileClip.subclipped(
-    "00:10:34.75", "00:10:56.80"
+    config["startTime"], config["endTime"]
 )
 
 final_clip = CompositeVideoClip(
@@ -69,8 +75,13 @@ except:
 
 # Remove the temporary audio file
 try:
-    os.unlink(temp_audio_file.name)
+    os.unlink(temp_audio_file)
 except:
     pass
+
+# try:
+#     os.unlink(temp_subtitle_file)
+# except:
+#     pass
 
 print("Video processing completed successfully!")
