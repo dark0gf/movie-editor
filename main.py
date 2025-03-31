@@ -5,6 +5,7 @@ import json
 import io
 import tempfile
 import os
+import pysrt
 
 with open("config.json") as json_file:
     config = json.load(json_file)
@@ -28,7 +29,7 @@ process = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
 print(process.stderr.decode())
 audio_clip = AudioFileClip(temp_audio_file)
 
-# Subtitles
+# Subtitles extract
 temp_subtitle_file = './result/subtitles.srt'
 subtitle_command = [
     'ffmpeg',
@@ -47,10 +48,39 @@ clip1 = videoFileClip.subclipped(
     config["startTime"], config["endTime"]
 )
 
+# Subtitles add to vide
+subtitles = pysrt.open(temp_subtitle_file)
+
+subtitle_clips = []
+for sub in subtitles:
+    start_time = sub.start.ordinal / 1000  # Convert to seconds
+    end_time = sub.end.ordinal / 1000
+    duration = end_time - start_time
+    
+    # text_clip = TextClip(
+    #     sub.text,
+    #     font='Arial',
+    #     size=(clip1.w, None),
+    #     method='caption',
+    #     color='white',
+    #     stroke_color='black',
+    #     stroke_width=2,
+    #     font_size=24
+    # ).set_position(('center', 'bottom')).set_duration(duration).set_start(start_time)
+
+    text_clip = (
+        TextClip(sub.text, fontsize=30, color="white", font="Arial")
+        .set_position(("center", "top"))
+        .set_duration(video.duration)
+    )
+
+    
+    subtitle_clips.append(text_clip)
+
 final_clip = CompositeVideoClip(
     [
         clip1,
-    ]
+    ] + subtitle_clips
 )
 
 # Set the audio of the video clip to the new audio clip
@@ -79,9 +109,10 @@ try:
 except:
     pass
 
-# try:
-#     os.unlink(temp_subtitle_file)
-# except:
-#     pass
+# Remove the temporary subtitle file
+try:
+    os.unlink(temp_subtitle_file)
+except:
+    pass
 
 print("Video processing completed successfully!")

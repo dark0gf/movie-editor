@@ -1,5 +1,5 @@
 Install dependencies
-```pipenv install ```
+```pipenv install```
 
 Run script
 ```pipenv run python main.py```
