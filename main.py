@@ -41,14 +41,7 @@ subtitle_command = [
 ]
 subprocess.run(subtitle_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-# Video
-videoFileClip = VideoFileClip(f'./video/{config["videoSource"]}')
-
-clip1 = videoFileClip.subclipped(
-    config["startTime"], config["endTime"]
-)
-
-# Subtitles add to vide
+# Subtitles clips
 subtitles = pysrt.open(temp_subtitle_file)
 
 subtitle_clips = []
@@ -56,26 +49,37 @@ for sub in subtitles:
     start_time = sub.start.ordinal / 1000  # Convert to seconds
     end_time = sub.end.ordinal / 1000
     duration = end_time - start_time
-    
-    # text_clip = TextClip(
-    #     sub.text,
-    #     font='Arial',
-    #     size=(clip1.w, None),
-    #     method='caption',
-    #     color='white',
-    #     stroke_color='black',
-    #     stroke_width=2,
-    #     font_size=24
-    # ).set_position(('center', 'bottom')).set_duration(duration).set_start(start_time)
+
 
     text_clip = (
-        TextClip(sub.text, fontsize=30, color="white", font="Arial")
-        .set_position(("center", "top"))
-        .set_duration(video.duration)
-    )
+        TextClip(
+            "./fonts/tiktoksans/TikTokDisplay-Bold.ttf", 
+            text="Test subtitles", #sub.text,
+            size=(600, None),
+            font_size=50,
+            color="white",
+            method='caption',
+            stroke_color='black',
+            stroke_width=1,
+            bg_color=None,  # Transparent background
+            transparent=True,
+            text_align='center',  # Center-align the text
+            interline=4  # Space between lines
+        )
+        .with_position(('center', 'bottom'))
+        .with_duration(2)
+        .with_start(0))
 
     
     subtitle_clips.append(text_clip)
+
+# Video
+videoFileClip = VideoFileClip(f'./video/{config["videoSource"]}')
+
+clip1 = videoFileClip.subclipped(
+    config["startTime"], config["endTime"]
+)
+
 
 final_clip = CompositeVideoClip(
     [
