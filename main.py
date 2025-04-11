@@ -54,7 +54,7 @@ for sub in subtitles:
     text_clip = (
         TextClip(
             "./fonts/tiktoksans/TikTokDisplay-Bold.ttf", 
-            text="Test subtitles", #sub.text,
+            text="Тест субтитров 🔟", #sub.text,
             size=(600, None),
             font_size=100,
             color="white",
@@ -98,7 +98,7 @@ resized_clip = content_clip.resized(width=target_width)
 background = (
     content_clip
     .resized(width=target_width * 1.2)  # Make it slightly larger to fill any gaps
-    .fx(blur, sigma=10)  # Add gaussian blur effect
+    # .fx(blur, sigma=10)  # Add gaussian blur effect
     .with_duration(content_clip.duration)
 )
 
