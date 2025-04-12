@@ -54,17 +54,17 @@ for sub in subtitles:
     text_clip = (
         TextClip(
             "./fonts/tiktoksans/TikTokDisplay-Bold.ttf", 
-            text="Тест субтитров 🔟", #sub.text,
+            text="Тест субтитров 🔟", 
             size=(600, None),
             font_size=100,
             color="white",
             method='caption',
             stroke_color='black',
             stroke_width=1,
-            bg_color=None,  # Transparent background
+            bg_color=None,  
             transparent=True,
-            text_align='center',  # Center-align the text
-            interline=4  # Space between lines
+            text_align='center', 
+            interline=4 
         )
         .with_position(('center', 'bottom'))
         .with_duration(2)
