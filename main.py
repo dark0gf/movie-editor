@@ -54,7 +54,7 @@ for sub in subtitles:
     text_clip = (
         TextClip(
             "./fonts/tiktoksans/TikTokDisplay-Bold.ttf", 
-            text="Тест субтитров 🔟", 
+            text="Тест субтитров 🔟 ⺻ 𑆏", 
             size=(600, None),
             font_size=100,
             color="white",
