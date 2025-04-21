@@ -123,7 +123,19 @@ final_clip = CompositeVideoClip(
 
 # Set the audio of the video clip to the new audio clip
 final_clip = final_clip.with_audio(audio_clip)  # Changed from set_audio to with_audio
-final_clip.write_videofile("./result/result.mp4")
+result_file_path = "./result/result.mp4"
+final_clip.write_videofile(result_file_path)
+
+# Get information about the output file using ffmpeg
+print("\n--- Output File Information ---")
+ffmpeg_info_command = [
+    'ffmpeg',
+    '-i', result_file_path,
+]
+ffmpeg_info_process = subprocess.run(ffmpeg_info_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+# FFmpeg outputs the file information to stderr
+print(ffmpeg_info_process.stderr.decode())
+print("--- End of Output File Information ---\n")
 
 # Clean up resources
 try:
