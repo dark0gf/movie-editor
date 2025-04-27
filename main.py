@@ -5,8 +5,8 @@ import json
 import io
 import tempfile
 import os
-import pysrt
 import cv2  # Import OpenCV for image processing
+from subtitle import process_subtitles
 
 with open("config.json") as json_file:
     config = json.load(json_file)
@@ -34,115 +34,8 @@ process = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
 print(process.stderr.decode())
 audio_clip = AudioFileClip(temp_audio_file)
 
-# Subtitles extract
-temp_subtitle_file = './result/subtitles.srt'
-subtitle_command = [
-    'ffmpeg',
-    '-i', f'./video/{config["videoSource"]}',
-    '-map', '0:s:0',
-    '-c', 'copy',
-    '-y',
-    temp_subtitle_file
-]
-subprocess.run(subtitle_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-# Subtitles clips
-subtitles = pysrt.open(temp_subtitle_file)
-
-
-text_clip_height_offset = 600
-subtitle_clips = []
-for sub in subtitles:
-    start_time = sub.start.ordinal / 1000  # Convert to seconds
-    end_time = sub.end.ordinal / 1000
-    duration = end_time - start_time
-
-
-    text_clip_white = (
-        TextClip(
-            "./fonts/Noto_Sans/static/NotoSans-Medium.ttf",
-            text="Text on english, Text on english, Text on english, Text on english",
-            size=(target_width - 50, None),
-            font_size=60,
-            color="white",
-            method='caption',
-            stroke_color='black',
-            stroke_width=1,
-            bg_color=None,
-            transparent=True,
-            text_align='center',
-            interline=6
-        )
-        .with_position(('center', 0))
-        .with_start(0)
-        .with_duration(2)
-    )
-
-    text_clip_white = (
-        TextClip(
-            "./fonts/Noto_Sans/static/NotoSans-Medium.ttf",
-            text="Text on english, Text on english, Text on english, Text on english",
-            size=(target_width - 50, text_clip_white.size[1] + 20),
-            font_size=60,
-            color="white",
-            method='caption',
-            stroke_color='black',
-            stroke_width=1,
-            bg_color=None,
-            transparent=True,
-            text_align='center',
-            interline=6
-        )
-        .with_position(('center', text_clip_height_offset))
-        .with_start(0)
-        .with_duration(2)
-    )
-
-    print(f"text_clip_white dimensions: {text_clip_white.size}")
-
-    text_clip_yellow = (
-        TextClip(
-            "./fonts/Noto_Sans/static/NotoSans-Medium.ttf",
-            text="Texto en inglés, Texto en inglés, Texto en inglés, Texto en inglés",
-            size=(target_width - 50, None),
-            font_size=60,
-            color="yellow",
-            method='caption',
-            stroke_color='black',
-            stroke_width=1,
-            bg_color=None,
-            transparent=True,
-            text_align='center',
-            interline=4
-        )
-        .with_position(('center', text_clip_height_offset + text_clip_white.size[1]))
-        .with_start(0)
-        .with_duration(2)
-    )
-
-    text_clip_yellow = (
-        TextClip(
-            "./fonts/Noto_Sans/static/NotoSans-Medium.ttf",
-            text="Texto en inglés, Texto en inglés, Texto en inglés, Texto en inglés",
-            size=(target_width - 50, text_clip_yellow.size[1] + 20),
-            font_size=60,
-            color="yellow",
-            method='caption',
-            stroke_color='black',
-            stroke_width=1,
-            bg_color=None,
-            transparent=True,
-            text_align='center',
-            interline=4
-        )
-        .with_position(('center', text_clip_height_offset + text_clip_white.size[1]))
-        .with_start(0)
-        .with_duration(2)
-    )
-
-    print(f"text_clip_yellow dimensions: {text_clip_yellow.size}")
-
-    subtitle_clips.extend([text_clip_white, text_clip_yellow])
+subtitle_clips = process_subtitles(config["videoSource"], target_width, target_height)
 
 
 # Video
