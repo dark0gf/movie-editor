@@ -6,12 +6,17 @@ import io
 import tempfile
 import os
 import pysrt
+import cv2  # Import OpenCV for image processing
 
 with open("config.json") as json_file:
     config = json.load(json_file)
 
 print("config")
 print(config)
+
+# Calculate dimensions for TikTok format (9:16)
+target_width = 1080  # Standard TikTok width
+target_height = 1920  # Standard TikTok height
 
 # Audio
 temp_audio_file = './result/audio.wav'
@@ -44,6 +49,8 @@ subprocess.run(subtitle_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 # Subtitles clips
 subtitles = pysrt.open(temp_subtitle_file)
 
+
+text_clip_height_offset = 600
 subtitle_clips = []
 for sub in subtitles:
     start_time = sub.start.ordinal / 1000  # Convert to seconds
@@ -51,28 +58,91 @@ for sub in subtitles:
     duration = end_time - start_time
 
 
-    text_clip = (
+    text_clip_white = (
         TextClip(
-            "./fonts/tiktoksans/TikTokDisplay-Bold.ttf", 
-            text="Тест субтитров 🔟 ⺻ 𑆏", 
-            size=(600, None),
-            font_size=100,
+            "./fonts/Noto_Sans/static/NotoSans-Medium.ttf",
+            text="Text on english, Text on english, Text on english, Text on english",
+            size=(target_width - 50, None),
+            font_size=60,
             color="white",
             method='caption',
             stroke_color='black',
             stroke_width=1,
-            bg_color=None,  
+            bg_color=None,
             transparent=True,
-            text_align='center', 
-            interline=4 
+            text_align='center',
+            interline=6
         )
-        .with_position(('center', 'bottom'))
+        .with_position(('center', 0))
+        .with_start(0)
         .with_duration(2)
-        .with_start(0))
+    )
 
-    
-    subtitle_clips.append(text_clip)
+    text_clip_white = (
+        TextClip(
+            "./fonts/Noto_Sans/static/NotoSans-Medium.ttf",
+            text="Text on english, Text on english, Text on english, Text on english",
+            size=(target_width - 50, text_clip_white.size[1] + 20),
+            font_size=60,
+            color="white",
+            method='caption',
+            stroke_color='black',
+            stroke_width=1,
+            bg_color=None,
+            transparent=True,
+            text_align='center',
+            interline=6
+        )
+        .with_position(('center', text_clip_height_offset))
+        .with_start(0)
+        .with_duration(2)
+    )
 
+    print(f"text_clip_white dimensions: {text_clip_white.size}")
+
+    text_clip_yellow = (
+        TextClip(
+            "./fonts/Noto_Sans/static/NotoSans-Medium.ttf",
+            text="Texto en inglés, Texto en inglés, Texto en inglés, Texto en inglés",
+            size=(target_width - 50, None),
+            font_size=60,
+            color="yellow",
+            method='caption',
+            stroke_color='black',
+            stroke_width=1,
+            bg_color=None,
+            transparent=True,
+            text_align='center',
+            interline=4
+        )
+        .with_position(('center', text_clip_height_offset + text_clip_white.size[1]))
+        .with_start(0)
+        .with_duration(2)
+    )
+
+    text_clip_yellow = (
+        TextClip(
+            "./fonts/Noto_Sans/static/NotoSans-Medium.ttf",
+            text="Texto en inglés, Texto en inglés, Texto en inglés, Texto en inglés",
+            size=(target_width - 50, text_clip_yellow.size[1] + 20),
+            font_size=60,
+            color="yellow",
+            method='caption',
+            stroke_color='black',
+            stroke_width=1,
+            bg_color=None,
+            transparent=True,
+            text_align='center',
+            interline=4
+        )
+        .with_position(('center', text_clip_height_offset + text_clip_white.size[1]))
+        .with_start(0)
+        .with_duration(2)
+    )
+
+    print(f"text_clip_yellow dimensions: {text_clip_yellow.size}")
+
+    subtitle_clips.extend([text_clip_white, text_clip_yellow])
 
 
 # Video
@@ -85,32 +155,29 @@ content_clip = videoFileClip.subclipped(
 # Get the dimensions of the original video
 video_width, video_height = content_clip.size
 
-# Calculate dimensions for TikTok format (9:16)
-target_width = 1080  # Standard TikTok width
-target_height = 1920  # Standard TikTok height
-
 # Always scale based on width to preserve full width of the video
 new_width = target_width
 new_height = int(video_height * (target_width / video_width))
-resized_clip = content_clip.resized(width=target_width)
+resized_clip = content_clip.resized(width=target_width*1.5)
 
-# Create a blurred background from the content clip
+# Define a custom blur function using OpenCV
+def blur_frame(frame, sigma=10):
+    # Apply Gaussian blur to the frame
+    return cv2.GaussianBlur(frame, (sigma*2+1, sigma*2+1), sigma)
+
 background = (
     content_clip
-    .resized(width=target_width * 1.2)  # Make it slightly larger to fill any gaps
-    # .fx(blur, sigma=10)  # Add gaussian blur effect
+    .resized(width=target_width * 4)
     .with_duration(content_clip.duration)
+    .transform(lambda get_frame, t: blur_frame(get_frame(t), sigma=30))
 )
 
 # Center the background clip
 x_bg = -(background.size[0] - target_width) // 2  # Center horizontally
 y_bg = -(background.size[1] - target_height) // 2  # Center vertically
 
-# Center the video vertically on the background
-x_center = 0  # No horizontal offset needed since we're using full width
-y_center = (target_height - resized_clip.size[1]) // 2
-
-
+x_center = -((resized_clip.size[0] - target_width) // 2)  # Center horizontally
+y_center = (target_height - resized_clip.size[1]) // 2 - 300  # Center vertically
 
 
 final_clip = CompositeVideoClip(

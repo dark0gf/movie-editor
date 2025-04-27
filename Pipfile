@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 moviepy = "*"
 pysrt = "*"
+opencv-python = "*"
 
 [dev-packages]
 
