@@ -35,7 +35,7 @@ print(process.stderr.decode())
 audio_clip = AudioFileClip(temp_audio_file)
 
 
-subtitle_clips = process_subtitles(config["videoSource"], target_width, target_height)
+subtitle_clips = process_subtitles(config["videoSource"], config["subtitleTrack"], target_width, target_height, config["startTime"], config["endTime"])
 
 
 # Video
