@@ -2,8 +2,57 @@ from moviepy import *
 import subprocess
 import pysrt
 import re
+import os
+import deepl
 
 text_clip_height_offset = 900
+
+# Initialize DeepL translator
+# You should set your DeepL API key as an environment variable: DEEPL_API_KEY
+def get_translator():
+    """
+    Initialize and return a DeepL translator instance.
+    
+    Returns:
+        deepl.Translator: A configured DeepL translator instance
+    
+    Raises:
+        ValueError: If the DEEPL_API_KEY environment variable is not set
+    """
+    api_key = os.environ.get('DEEPL_API_KEY')
+    if not api_key:
+        raise ValueError("DEEPL_API_KEY environment variable is not set. Please set it to your DeepL API key.")
+    
+    return deepl.Translator(api_key)
+
+def translate_text(text, target_lang='ES', source_lang=None):
+    """
+    Translate text using DeepL API.
+    
+    Args:
+        text (str): Text to translate
+        target_lang (str): Target language code (default: 'ES' for Spanish)
+        source_lang (str, optional): Source language code. If None, DeepL will auto-detect.
+    
+    Returns:
+        str: Translated text
+        
+    Example:
+        >>> translate_text("Hello world", target_lang="ES")
+        'Hola mundo'
+    """
+    try:
+        translator = get_translator()
+        result = translator.translate_text(
+            text, 
+            target_lang=target_lang,
+            source_lang=source_lang
+        )
+        return result.text
+    except Exception as e:
+        print(f"Translation error: {e}")
+        # Return original text if translation fails
+        return text
 
 def time_to_seconds(time_str):
     """
@@ -89,6 +138,12 @@ def process_subtitles(video_source, subtitle_track, target_width, target_height,
         # Get the actual subtitle text
         subtitle_text = sub.text
         
+        # Translate the subtitle text to Spanish using DeepL API
+        translated_text = translate_text(subtitle_text, target_lang='ES')
+        
+        print(f"Original: '{subtitle_text}'")
+        print(f"Translated: '{translated_text}'")
+        
         # Create white text clip (English)
         text_clip_white = (
             TextClip(
@@ -133,12 +188,11 @@ def process_subtitles(video_source, subtitle_track, target_width, target_height,
         print(f"Subtitle at {relative_start}s to {relative_end}s: '{subtitle_text}'")
         print(f"text_clip_white dimensions: {text_clip_white.size}")
 
-        # Create yellow text clip (Spanish translation - assuming this is a translation)
-        # In a real application, you might want to use a translation service or have translations provided
+        # Create yellow text clip with Spanish translation
         text_clip_yellow = (
             TextClip(
                 "./fonts/Noto_Sans/static/NotoSans-Medium.ttf",
-                text=subtitle_text,  # Using the same text for now, replace with translation if available
+                text=translated_text,  # Using the translated text
                 size=(target_width - 50, None),
                 font_size=60,
                 color="yellow",
@@ -158,7 +212,7 @@ def process_subtitles(video_source, subtitle_track, target_width, target_height,
         text_clip_yellow = (
             TextClip(
                 "./fonts/Noto_Sans/static/NotoSans-Medium.ttf",
-                text=subtitle_text,  # Using the same text for now, replace with translation if available
+                text=translated_text,  # Using the translated text
                 size=(target_width - 50, text_clip_yellow.size[1] + 20),
                 font_size=60,
                 color="yellow",
